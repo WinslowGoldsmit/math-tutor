@@ -19,7 +19,6 @@ export default function AccessToggles({
     const isOn = allowed.includes(topicId)
     const next = isOn ? allowed.filter(id => id !== topicId) : [...allowed, topicId]
     setAllowed(next)
-
     await fetch('/api/access', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -28,23 +27,13 @@ export default function AccessToggles({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div>
       {allTopics.map(t => {
         const on = allowed.includes(t.id)
         return (
-          <div
-            key={t.id}
-            onClick={() => toggle(t.id)}
-            style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 14px', border: '1px solid #ddd', borderRadius: '10px', cursor: 'pointer',
-            }}
-          >
+          <div key={t.id} className="toggle-row" onClick={() => toggle(t.id)}>
             <span style={{ fontSize: '13px' }}>{t.name}</span>
-            <span style={{
-              fontSize: '12px', padding: '3px 10px', borderRadius: '20px',
-              background: on ? '#E6F0E4' : '#eee', color: on ? '#365B3A' : '#888',
-            }}>
+            <span className={`toggle-status ${on ? 'toggle-on' : 'toggle-off'}`}>
               {on ? 'Allowed' : 'Locked'}
             </span>
           </div>

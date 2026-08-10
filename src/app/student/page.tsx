@@ -8,9 +8,7 @@ export default async function StudentHome() {
   const studentId = cookieStore.get('student_id')?.value
   const studentName = cookieStore.get('student_name')?.value
 
-  if (!studentId) {
-    redirect('/login')
-  }
+  if (!studentId) redirect('/login')
 
   const { data: allTopics } = await supabase
     .from('topics')
@@ -34,40 +32,24 @@ export default async function StudentHome() {
     .single()
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px', fontFamily: 'sans-serif' }}>
-      <h1 style={{ fontSize: '22px', marginBottom: '4px' }}>Hi, {studentName}</h1>
-      <p style={{ color: '#666', marginBottom: '20px' }}>Pick a topic to practice.</p>
+    <div className="page">
+      <h1 className="page-title">Hi, {studentName}</h1>
+      <p className="page-sub">Pick a topic to practice.</p>
 
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px',
-        borderRadius: '14px', background: '#FAEBDA', marginBottom: '28px'
-      }}>
-        <span style={{ fontSize: '20px', fontWeight: 700, color: '#834F1C' }}>{streak?.count ?? 0}</span>
-        <span style={{ fontSize: '13px', color: '#834F1C' }}>day streak</span>
+      <div className="streak-badge">
+        <span className="num">{streak?.count ?? 0}</span>
+        <span className="lbl">day streak</span>
       </div>
 
       {(!topics || topics.length === 0) && (
-        <p style={{ color: '#888' }}>Nothing available yet — check back once your teacher adds content.</p>
+        <div className="empty">Nothing available yet — check back once your teacher adds content.</div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {topics?.map(topic => (
-          <Link
-            key={topic.id}
-            href={`/student/topics/${topic.id}`}
-            style={{
-              display: 'block',
-              padding: '16px 18px',
-              border: '1px solid #ddd',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              color: '#222',
-            }}
-          >
-            {topic.name}
-          </Link>
-        ))}
-      </div>
+      {topics?.map(topic => (
+        <Link key={topic.id} href={`/student/topics/${topic.id}`} className="list-link">
+          {topic.name}
+        </Link>
+      ))}
     </div>
   )
 }

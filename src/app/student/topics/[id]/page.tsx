@@ -21,27 +21,20 @@ export default async function TopicHub({ params }: { params: Promise<{ id: strin
     .eq('topic_id', id)
 
   return (
-    <div style={{ maxWidth: '420px', margin: '0 auto', padding: '24px 20px', fontFamily: 'sans-serif' }}>
-      <Link href="/student" style={{ color: '#888', fontSize: '13px' }}>&larr; Back</Link>
-      <h1 style={{ fontSize: '22px', margin: '10px 0 28px' }}>{topic?.name}</h1>
+    <div className="page">
+      <Link href="/student" className="back-link">&larr; Back</Link>
+      <h1 className="page-title" style={{ marginBottom: '28px' }}>{topic?.name}</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <Link
-          href={`/student/topics/${id}/flashcards`}
-          style={{ padding: '24px 12px', border: '1px solid #ddd', borderRadius: '14px', textAlign: 'center', textDecoration: 'none', color: '#222' }}
-        >
-          <div style={{ fontSize: '24px', fontWeight: 600 }}>{fcCount ?? 0}</div>
-          <div style={{ fontSize: '13px', marginTop: '4px' }}>Flashcards</div>
+      <div className="mode-grid">
+        <Link href={`/student/topics/${id}/flashcards`} className="mode-card">
+          <div className="n">{fcCount ?? 0}</div>
+          <div className="l">Flashcards</div>
         </Link>
-        <Link
-          href={`/student/topics/${id}/problems`}
-          style={{ padding: '24px 12px', border: '1px solid #ddd', borderRadius: '14px', textAlign: 'center', textDecoration: 'none', color: '#222' }}
-        >
-          <div style={{ fontSize: '24px', fontWeight: 600 }}>{mcqCount ?? 0}</div>
-          <div style={{ fontSize: '13px', marginTop: '4px' }}>Problems</div>
+        <Link href={`/student/topics/${id}/problems`} className="mode-card">
+          <div className="n">{mcqCount ?? 0}</div>
+          <div className="l">Problems</div>
         </Link>
       </div>
     </div>
   )
 }
-

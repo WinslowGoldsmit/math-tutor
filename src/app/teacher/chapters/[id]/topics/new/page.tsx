@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function NewTopic() {
   const [name, setName] = useState('')
@@ -17,24 +18,22 @@ export default function NewTopic() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, chapter_id: chapterId }),
     })
-    if (res.ok) {
-      router.push(`/teacher/chapters/${chapterId}`)
-    } else {
-      setError('Something went wrong. Try again.')
-    }
+    if (res.ok) router.push(`/teacher/chapters/${chapterId}`)
+    else setError('Something went wrong. Try again.')
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '60px auto', fontFamily: 'sans-serif' }}>
-      <h1 style={{ fontSize: '20px', marginBottom: '20px' }}>New topic</h1>
+    <div className="page" style={{ maxWidth: '400px' }}>
+      <Link href={`/teacher/chapters/${chapterId}`} className="back-link">&larr; Back</Link>
+      <h1 className="page-title" style={{ marginBottom: '20px' }}>New topic</h1>
       <input
+        type="text"
         placeholder="e.g. Basic Proportionality Theorem"
         value={name}
         onChange={e => setName(e.target.value)}
-        style={{ width: '100%', padding: '10px', marginBottom: '12px', boxSizing: 'border-box' }}
       />
-      <button onClick={handleSave} style={{ width: '100%', padding: '10px' }}>Save topic</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <button className="btn btn-primary" onClick={handleSave}>Save topic</button>
+      {error && <p className="error-text">{error}</p>}
     </div>
   )
 }

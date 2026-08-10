@@ -25,24 +25,26 @@ export default function FlashcardPractice() {
   }, [topicId])
 
   async function rate(rating: string) {
-  const card = cards[index]
-  await fetch('/api/reviews', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ flashcard_id: card.id, rating }),
-  })
-  await fetch('/api/streak', { method: 'POST' })
-  setRevealed(false)
-  setIndex(i => i + 1)
-}
+    const card = cards[index]
+    await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flashcard_id: card.id, rating }),
+    })
+    await fetch('/api/streak', { method: 'POST' })
+    setRevealed(false)
+    setIndex(i => i + 1)
+  }
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
+  if (loading) return <div className="page" style={{ textAlign: 'center', paddingTop: '80px', color: 'var(--ink-soft)' }}>Loading…</div>
 
   if (index >= cards.length) {
     return (
-      <div style={{ maxWidth: '400px', margin: '80px auto', textAlign: 'center', fontFamily: 'sans-serif' }}>
-        <p>You&apos;ve reviewed all {cards.length} cards. Nicely done.</p>
-        <button onClick={() => router.back()} style={{ marginTop: '16px', padding: '10px 20px' }}>Back to topic</button>
+      <div className="page" style={{ textAlign: 'center', paddingTop: '80px' }}>
+        <p style={{ color: 'var(--ink-soft)' }}>You&apos;ve reviewed all {cards.length} cards. Nicely done.</p>
+        <button className="btn" style={{ marginTop: '16px', width: 'auto', padding: '10px 20px' }} onClick={() => router.back()}>
+          Back to topic
+        </button>
       </div>
     )
   }
@@ -50,36 +52,26 @@ export default function FlashcardPractice() {
   const card = cards[index]
 
   return (
-    <div style={{ maxWidth: '420px', margin: '0 auto', padding: '24px 20px', fontFamily: 'sans-serif' }}>
-      <p style={{ textAlign: 'center', color: '#888', fontSize: '13px', marginBottom: '14px' }}>
-        Card {index + 1} of {cards.length}
-      </p>
+    <div className="page">
+      <p className="progress-label">Card {index + 1} of {cards.length}</p>
 
-      <div style={{
-        border: '1px solid #ddd', borderRadius: '16px', minHeight: '200px',
-        padding: '28px 20px', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', alignItems: 'center', textAlign: 'center', marginBottom: '20px'
-      }}>
+      <div className="fc-card">
         {card.image_url && (
-          <img src={card.image_url} alt="" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '14px' }} />
+          <img src={card.image_url} alt="" style={{ maxWidth: '100%', borderRadius: '10px', marginBottom: '14px' }} />
         )}
-        <p style={{ fontSize: '17px', lineHeight: 1.5 }}>
-          {revealed ? card.back : card.front}
-        </p>
+        <p className="fc-text">{revealed ? card.back : card.front}</p>
       </div>
 
       {!revealed && (
-        <button onClick={() => setRevealed(true)} style={{ width: '100%', padding: '12px' }}>
-          Show answer
-        </button>
+        <button className="btn btn-primary" onClick={() => setRevealed(true)}>Show answer</button>
       )}
 
       {revealed && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-          <button onClick={() => rate('again')} style={{ padding: '10px 4px', fontSize: '12px' }}>Again</button>
-          <button onClick={() => rate('hard')} style={{ padding: '10px 4px', fontSize: '12px' }}>Hard</button>
-          <button onClick={() => rate('good')} style={{ padding: '10px 4px', fontSize: '12px' }}>Good</button>
-          <button onClick={() => rate('easy')} style={{ padding: '10px 4px', fontSize: '12px' }}>Easy</button>
+        <div className="rate-row">
+          <button className="rate-btn rate-again" onClick={() => rate('again')}>Again</button>
+          <button className="rate-btn rate-hard" onClick={() => rate('hard')}>Hard</button>
+          <button className="rate-btn rate-good" onClick={() => rate('good')}>Good</button>
+          <button className="rate-btn rate-easy" onClick={() => rate('easy')}>Easy</button>
         </div>
       )}
     </div>
