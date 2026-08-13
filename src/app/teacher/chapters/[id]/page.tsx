@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import DeleteButton from '../../../DeleteButton'
 
 export default async function ChapterDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -24,14 +25,20 @@ export default async function ChapterDetail({ params }: { params: Promise<{ id: 
       <div className="section-title" style={{ marginTop: 0 }}>Topics</div>
       {(!topics || topics.length === 0) && <div className="empty">No topics yet.</div>}
       {topics?.map(t => (
-        <Link key={t.id} href={`/teacher/topics/${t.id}`} className="list-link">
-          {t.name}
-        </Link>
+        <div key={t.id} className="list-link" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link href={`/teacher/topics/${t.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+            {t.name}
+          </Link>
+          <DeleteButton id={t.id} type="topics" />
+        </div>
       ))}
 
       <Link href={`/teacher/chapters/${id}/topics/new`} className="btn-ghost" style={{ display: 'inline-block', marginTop: '4px' }}>
         + Add a topic
       </Link>
+
+      <div className="section-title">Danger zone</div>
+      <DeleteButton id={parseInt(id)} type="chapters" redirectTo="/teacher" />
     </div>
   )
 }

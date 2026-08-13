@@ -11,9 +11,14 @@ export async function POST(request: Request) {
 
   const { name, chapter_id } = await request.json()
 
+  const { count } = await supabase
+    .from('topics')
+    .select('*', { count: 'exact', head: true })
+    .eq('chapter_id', chapter_id)
+
   const { error } = await supabase
     .from('topics')
-    .insert({ name, chapter_id, order_index: 0 })
+    .insert({ name, chapter_id, order_index: count ?? 0 })
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 })

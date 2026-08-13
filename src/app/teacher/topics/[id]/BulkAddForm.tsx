@@ -1,48 +1,86 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
-import BulkAddForm from './BulkAddForm'
 
-export default async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default function BulkAddForm({ topicId, type }: { topicId: string; type: 'flashcards' | 'mcqs' }) {
+  const [text, setText] = useState('')
+  const [message, setMessage] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [lastUploadedUrl, setLastUploadedUrl] = useState('')
+  const router = useRouter()
 
-  const { data: topic } = await supabase
-    .from('topics')
-    .select('id, name, chapter_id')
-    .eq('id', id)
-    .single()
+  async function handleAdd() {
+    setMessage('')
+    const res = await fetch(`/api/${type}/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic_id: topicId, text }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setMessage(`${data.added} added${data.skipped ? `, ${data.skipped} skipped` : ''}.`)
+      setText('')
+      router.refresh()
+    } else {
+      setMessage(data.message || 'Something went wrong.')
+    }
+  }
 
-  const { data: flashcards } = await supabase
-    .from('flashcards')
-    .select('id, front, back')
-    .eq('topic_id', id)
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const fileName = `${Date.now()}-${file.name}`
+    const { error } = await supabase.storage.from('images').upload(fileName, file)
+    if (error) {
+      setMessage('Image upload failed: ' + error.message)
+      setUploading(false)
+      return
+    }
+    const { data } = supabase.storage.from('images').getPublicUrl(fileName)
+    setLastUploadedUrl(data.publicUrl)
+    setUploading(false)
+  }
 
-  const { data: mcqs } = await supabase
-    .from('mcqs')
-    .select('id, question')
-    .eq('topic_id', id)
+  function copyUrl() {
+    navigator.clipboard.writeText(lastUploadedUrl)
+    setMessage('Link copied — paste it after IMAGE: in your text.')
+  }
+
+  const placeholder =
+    type === 'flashcards'
+      ? 'Q: State the Basic Proportionality Theorem.\nA: A line parallel to one side divides the other two sides in the same ratio.\nIMAGE: (optional)\n---'
+      : 'Q: In triangle ABC, DE parallel to BC. Which is correct?\nA) AD/DB = AE/EC\nB) AD/AE = DB/EC\nC) AB/AC = DE/BC only\nD) AD/DB = EC/AE\nCORRECT: A\nEXPLAIN: BPT divides the two sides in the same ratio.\nIMAGE: (optional)\n---'
 
   return (
-    <div className="page">
-      <Link href={`/teacher/chapters/${topic?.chapter_id}`} className="back-link">&larr; Back</Link>
-      <h1 className="page-title" style={{ marginBottom: '24px' }}>{topic?.name}</h1>
+    <div style={{ marginTop: '10px' }}>
+      <div className="card" style={{ padding: '12px', marginBottom: '10px' }}>
+        <label style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
+          Upload an image (optional)
+        </label>
+        <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} style={{ marginBottom: uploading || lastUploadedUrl ? '10px' : 0 }} />
+        {uploading && <p className="msg-text">Uploading…</p>}
+        {lastUploadedUrl && !uploading && (
+          <div>
+            <img src={lastUploadedUrl} alt="" style={{ maxWidth: '100px', borderRadius: '8px', display: 'block', marginBottom: '8px' }} />
+            <button className="btn btn-small" onClick={copyUrl}>Copy link</button>
+          </div>
+        )}
+      </div>
 
-      <section style={{ marginBottom: '32px' }}>
-        <div className="section-title" style={{ marginTop: 0 }}>Flashcards ({flashcards?.length ?? 0})</div>
-        {(!flashcards || flashcards.length === 0) && <div className="empty">None yet.</div>}
-        {flashcards?.map(f => (
-          <div key={f.id} className="card" style={{ padding: '10px 12px', fontSize: '13px' }}>{f.front}</div>
-        ))}
-        <BulkAddForm topicId={id} type="flashcards" />
-      </section>
-
-      <section>
-        <div className="section-title">Problems ({mcqs?.length ?? 0})</div>
-        {(!mcqs || mcqs.length === 0) && <div className="empty">None yet.</div>}
-        {mcqs?.map(q => (
-          <div key={q.id} className="card" style={{ padding: '10px 12px', fontSize: '13px' }}>{q.question}</div>
-        ))}
-        <BulkAddForm topicId={id} type="mcqs" />
-      </section>
+      <textarea
+        className="mono"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder={placeholder}
+        rows={6}
+      />
+      <button className="btn btn-primary" style={{ width: 'auto', padding: '10px 18px' }} onClick={handleAdd}>
+        Add from text
+      </button>
+      {message && <p className="msg-text">{message}</p>}
     </div>
   )
 }

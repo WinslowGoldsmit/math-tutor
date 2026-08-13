@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import LogoutButton from '../LogoutButton'
 
 export default async function TeacherHome() {
   const cookieStore = await cookies()
@@ -13,7 +14,10 @@ export default async function TeacherHome() {
 
   return (
     <div className="page">
-      <h1 className="page-title" style={{ marginBottom: '24px' }}>Teacher Dashboard</h1>
+     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+  <h1 className="page-title" style={{ marginBottom: 0 }}>Teacher Dashboard</h1>
+  <LogoutButton />
+</div>
 
       <div className="section-title" style={{ marginTop: 0 }}>Chapters</div>
       {(!chapters || chapters.length === 0) && <div className="empty">No chapters yet.</div>}

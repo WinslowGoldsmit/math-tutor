@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import LogoutButton from '../LogoutButton'
 
 export default async function StudentHome() {
   const cookieStore = await cookies()
@@ -33,8 +34,13 @@ export default async function StudentHome() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Hi, {studentName}</h1>
-      <p className="page-sub">Pick a topic to practice.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+  <div>
+    <h1 className="page-title">Hi, {studentName}</h1>
+    <p className="page-sub">Pick a topic to practice.</p>
+  </div>
+  <LogoutButton />
+</div>
 
       <div className="streak-badge">
         <span className="num">{streak?.count ?? 0}</span>

@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import BulkAddForm from './BulkAddForm'
+import DeleteButton from './DeleteButton'
 
 export default async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -30,7 +31,10 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
         <div className="section-title" style={{ marginTop: 0 }}>Flashcards ({flashcards?.length ?? 0})</div>
         {(!flashcards || flashcards.length === 0) && <div className="empty">None yet.</div>}
         {flashcards?.map(f => (
-          <div key={f.id} className="card" style={{ padding: '10px 12px', fontSize: '13px' }}>{f.front}</div>
+          <div key={f.id} className="card" style={{ padding: '10px 12px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{f.front}</span>
+            <DeleteButton id={f.id} type="flashcards" />
+          </div>
         ))}
         <BulkAddForm topicId={id} type="flashcards" />
       </section>
@@ -39,7 +43,10 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
         <div className="section-title">Problems ({mcqs?.length ?? 0})</div>
         {(!mcqs || mcqs.length === 0) && <div className="empty">None yet.</div>}
         {mcqs?.map(q => (
-          <div key={q.id} className="card" style={{ padding: '10px 12px', fontSize: '13px' }}>{q.question}</div>
+          <div key={q.id} className="card" style={{ padding: '10px 12px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{q.question}</span>
+            <DeleteButton id={q.id} type="mcqs" />
+          </div>
         ))}
         <BulkAddForm topicId={id} type="mcqs" />
       </section>
