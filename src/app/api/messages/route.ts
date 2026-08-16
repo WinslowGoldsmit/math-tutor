@@ -2,6 +2,8 @@ import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000
+
 // Teacher sends a message to a student
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -18,10 +20,19 @@ export async function POST(request: Request) {
 }
 
 // Student fetches their messages
+// Returns: unread (for home screen) + read within 3 days (for archive)
 export async function GET() {
   const cookieStore = await cookies()
   const studentId = cookieStore.get('student_id')?.value
   if (!studentId) return NextResponse.json({ message: 'Not logged in' }, { status: 401 })
+
+  // Auto-delete messages older than 3 days
+  const cutoff = new Date(Date.now() - THREE_DAYS_MS).toISOString()
+  await supabaseAdmin
+    .from('student_messages')
+    .delete()
+    .eq('student_id', studentId)
+    .lt('created_at', cutoff)
 
   const { data, error } = await supabaseAdmin
     .from('student_messages')

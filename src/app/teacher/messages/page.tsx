@@ -4,7 +4,6 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import Link from 'next/link'
 import Topbar from '@/app/Topbar'
 
-/** Every note sent to every student, in one place. */
 export default async function TeacherMessages() {
   const cookieStore = await cookies()
   if (!cookieStore.get('is_teacher')?.value) redirect('/login')
@@ -19,18 +18,31 @@ export default async function TeacherMessages() {
 
   const nameById = new Map((students ?? []).map(s => [s.id, s.name]))
   const all = messages ?? []
-  const unreadCount = all.filter(m => !m.is_read).length
-
-  // Group by student so the teacher can see each conversation at a glance
-  const byStudent = new Map<number, typeof all>()
-  all.forEach(m => {
-    const list = byStudent.get(m.student_id) ?? []
-    list.push(m)
-    byStudent.set(m.student_id, list)
-  })
+  const unread = all.filter(m => !m.is_read)
+  const archived = all.filter(m => m.is_read)
 
   function formatTime(ts: string) {
-    return new Date(ts).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
+  function renderNote(m: typeof all[0]) {
+    return (
+      <div key={m.id} className={`message-card ${!m.is_read ? 'unread' : ''}`} style={{ opacity: m.is_read ? 0.7 : 1 }}>
+        <div className="msg-from" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span>{nameById.get(m.student_id) ?? 'Unknown student'}</span>
+          <Link href={`/teacher/students/${m.student_id}`} className="text-link" style={{ fontSize: '11px' }}>
+            Open student →
+          </Link>
+        </div>
+        <div className="msg-text">{m.message}</div>
+        <div className="msg-time">
+          {formatTime(m.created_at)}
+          <span className={`read-pill ${m.is_read ? 'is-read' : ''}`}>
+            {m.is_read ? 'Read by student' : 'Not opened yet'}
+          </span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -40,7 +52,7 @@ export default async function TeacherMessages() {
         <Link href="/teacher" className="back-link">← Dashboard</Link>
         <h1 className="page-title" style={{ marginBottom: '4px' }}>Notes sent</h1>
         <p style={{ fontSize: '13px', color: 'var(--ink-3)', marginBottom: '20px' }}>
-          {all.length} note{all.length === 1 ? '' : 's'} · {unreadCount} not yet opened by the student
+          {all.length} note{all.length === 1 ? '' : 's'} total · {unread.length} not yet read by student
         </p>
 
         {all.length === 0 && (
@@ -49,27 +61,28 @@ export default async function TeacherMessages() {
           </div>
         )}
 
-        {Array.from(byStudent.entries()).map(([studentId, list]) => (
-          <section key={studentId} style={{ marginBottom: '28px' }}>
-            <div className="section-label" style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{nameById.get(studentId) ?? 'Unknown student'}</span>
-              <Link href={`/teacher/students/${studentId}`} className="text-link" style={{ fontSize: '12px' }}>
-                Open student →
-              </Link>
+        {/* Unread — waiting for student to open */}
+        {unread.length > 0 && (
+          <section style={{ marginBottom: '28px' }}>
+            <div className="section-label" style={{ marginTop: 0, color: 'var(--amber-dark)' }}>
+              ● Waiting to be read ({unread.length})
             </div>
-            {list.map(m => (
-              <div key={m.id} className={`message-card ${!m.is_read ? 'unread' : ''}`}>
-                <div className="msg-text">{m.message}</div>
-                <div className="msg-time">
-                  {formatTime(m.created_at)}
-                  <span className={`read-pill ${m.is_read ? 'is-read' : ''}`}>
-                    {m.is_read ? 'Read' : 'Not opened yet'}
-                  </span>
-                </div>
-              </div>
-            ))}
+            {unread.map(renderNote)}
           </section>
-        ))}
+        )}
+
+        {/* Archive — student has read these */}
+        {archived.length > 0 && (
+          <section>
+            <div className="section-label" style={{ marginTop: 0, color: 'var(--sage-dark)' }}>
+              ✓ Read by student ({archived.length})
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--ink-3)', marginBottom: '10px' }}>
+              These disappear automatically 3 days after the student reads them.
+            </p>
+            {archived.map(renderNote)}
+          </section>
+        )}
       </div>
     </>
   )

@@ -13,26 +13,25 @@ export default function Messages() {
     fetch('/api/messages')
       .then(async r => {
         const d = await r.json().catch(() => ({}))
-        // Previously any failure here rendered nothing at all, so a teacher's
-        // note could silently never appear. Now the student sees something.
         if (!r.ok) { setError(d.message || 'Notes could not be loaded right now.'); return }
-        setMessages(d.messages ?? [])
+        // Only show UNREAD messages on home screen
+        setMessages((d.messages ?? []).filter((m: Message) => !m.is_read))
       })
       .catch(() => setError('Notes could not be loaded right now.'))
       .finally(() => setLoaded(true))
   }, [])
 
   async function markRead(id: number) {
-    setMessages(prev => prev.map(m => (m.id === id ? { ...m, is_read: true } : m)))
     try {
       await fetch(`/api/messages/${id}`, { method: 'PATCH' })
+      // Remove from home screen immediately after reading
+      setMessages(prev => prev.filter(m => m.id !== id))
     } catch {
-      // Non-critical — the note is still visible
+      // Non-critical
     }
   }
 
   if (!loaded) return null
-
   if (error) {
     return (
       <div style={{ marginBottom: '20px' }}>
@@ -41,28 +40,27 @@ export default function Messages() {
       </div>
     )
   }
-
   if (!messages.length) return null
-
-  const unread = messages.filter(m => !m.is_read).length
 
   return (
     <div style={{ marginBottom: '20px' }}>
       <div className="section-label" style={{ marginTop: 0 }}>
-        From your teacher{unread > 0 ? ` (${unread} new)` : ''}
+        From your teacher ({messages.length} new)
       </div>
       {messages.map(m => (
         <div
           key={m.id}
-          className={`message-card ${!m.is_read ? 'unread' : ''}`}
-          onClick={() => !m.is_read && markRead(m.id)}
-          style={{ cursor: !m.is_read ? 'pointer' : 'default' }}
+          className="message-card unread"
+          onClick={() => markRead(m.id)}
+          style={{ cursor: 'pointer' }}
         >
           <div className="msg-from">Teacher</div>
           <div className="msg-text">{m.message}</div>
           <div className="msg-time">
             {new Date(m.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-            {!m.is_read && <span style={{ marginLeft: '8px', color: 'var(--amber-dark)', fontWeight: 600 }}>New — tap to mark read</span>}
+            <span style={{ marginLeft: '8px', color: 'var(--amber-dark)', fontWeight: 600 }}>
+              Tap to dismiss
+            </span>
           </div>
         </div>
       ))}

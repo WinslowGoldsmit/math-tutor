@@ -10,7 +10,6 @@ export default async function ProgressMap() {
   const studentClass = cookieStore.get('student_class')?.value ?? '10'
   if (!studentId) redirect('/login')
 
-  // Parallel queries
   const [
     { data: allTopics },
     { data: accessRows },
@@ -18,6 +17,7 @@ export default async function ProgressMap() {
     { data: allMcqs },
     { data: reviews },
     { data: attemptsRaw },
+    { data: archivedMessages },
   ] = await Promise.all([
     supabaseAdmin.from('topics').select('id, name, order_index').order('order_index'),
     supabaseAdmin.from('access').select('topic_id').eq('student_id', studentId),
@@ -25,12 +25,23 @@ export default async function ProgressMap() {
     supabaseAdmin.from('mcqs').select('id, topic_id'),
     supabaseAdmin.from('reviews').select('flashcard_id').eq('student_id', studentId),
     supabaseAdmin.from('attempts').select('mcq_id, is_correct').eq('student_id', studentId),
+    // Archive = read messages that still exist (not yet auto-deleted)
+    supabaseAdmin
+      .from('student_messages')
+      .select('id, message, created_at')
+      .eq('student_id', studentId)
+      .eq('is_read', true)
+      .order('created_at', { ascending: false }),
   ])
 
   const allowedIds = accessRows?.map(r => r.topic_id) ?? []
   const hasRestrictions = allowedIds.length > 0
   const reviewedIds = new Set((reviews ?? []).map(r => r.flashcard_id))
   const attemptedIds = new Set((attemptsRaw ?? []).map(a => a.mcq_id))
+
+  function formatTime(ts: string) {
+    return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
 
   return (
     <>
@@ -56,7 +67,6 @@ export default async function ProgressMap() {
           const isComplete = pct >= 100
           const isReady = !locked && pct >= 80 && !isComplete
 
-          // Accuracy for this topic
           const topicMcqIds = new Set(topicMcqs.map(m => m.id))
           const topicAttempts = (attemptsRaw ?? []).filter(a => topicMcqIds.has(a.mcq_id) && a.is_correct !== null)
           const correctCount = topicAttempts.filter(a => a.is_correct === true).length
@@ -104,6 +114,24 @@ export default async function ProgressMap() {
             </div>
           )
         })}
+
+        {/* ---- Notes archive ---- */}
+        {archivedMessages && archivedMessages.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <div className="section-label">Past notes from your teacher</div>
+            <p style={{ fontSize: '12px', color: 'var(--ink-3)', marginBottom: '12px' }}>
+              Notes are kept for 3 days after you read them.
+            </p>
+            {archivedMessages.map(m => (
+              <div key={m.id} className="message-card" style={{ opacity: 0.75 }}>
+                <div className="msg-from">Teacher</div>
+                <div className="msg-text">{m.message}</div>
+                <div className="msg-time">{formatTime(m.created_at)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
     </>
   )
