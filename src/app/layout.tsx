@@ -4,6 +4,10 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Zenko',
   description: 'Your focused learning companion',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/logo-icon.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

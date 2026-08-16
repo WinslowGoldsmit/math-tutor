@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [role, setRole] = useState<'student' | 'teacher' | null>(null)
@@ -55,7 +56,14 @@ export default function LoginPage() {
   return (
     <div className="page" style={{ paddingTop: '10vh' }}>
       <div className="landing-hero">
-        <div className="landing-logo">Zenko</div>
+        <Image
+          src="/logo-wordmark.png"
+          alt="Zenko"
+          width={220}
+          height={52}
+          style={{ display: 'block', margin: '0 auto 10px' }}
+          priority
+        />
         <p className="landing-tag">Focused practice, real progress.</p>
       </div>
 

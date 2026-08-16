@@ -1,6 +1,6 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import LogoutButton from './LogoutButton'
-import ZenkoLogo from './ZenkoLogo'
 
 export default function Topbar({ role = 'student', name }: { role?: 'student' | 'teacher'; name?: string }) {
   const home = role === 'teacher' ? '/teacher' : '/student'
@@ -8,7 +8,14 @@ export default function Topbar({ role = 'student', name }: { role?: 'student' | 
   return (
     <div className="topbar">
       <Link href={home} className="topbar-logo" aria-label="Zenko home">
-        <ZenkoLogo size={26} variant={role} />
+        <Image
+          src="/logo-icon.png"
+          alt="Zenko"
+          width={28}
+          height={28}
+          style={{ borderRadius: '7px', display: 'block' }}
+          priority
+        />
         <span className={`topbar-brand ${role === 'teacher' ? 'topbar-teacher' : ''}`}>Zenko</span>
       </Link>
       <div className="topbar-right">

@@ -764,3 +764,33 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px
   background: var(--amber-tint, #FFF3E0); color: var(--amber-dark);
 }
 .read-pill.is-read { background: var(--sage-tint); color: var(--sage-dark); }
+
+/* ---- Card state pills (Anki-style) ---- */
+.state-pill {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--r-full);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-right: 8px;
+}
+.state-new        { background: var(--accent-tint); color: var(--accent); }
+.state-learning   { background: var(--amber-tint); color: var(--amber-dark); }
+.state-relearning { background: var(--coral-tint); color: var(--coral-dark); }
+.state-review     { background: var(--sage-tint); color: var(--sage-dark); }
+
+/* ---- Undo button ---- */
+.undo-btn {
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--r-full); padding: 3px 10px;
+  font-size: 11px; font-weight: 600; color: var(--ink-3);
+  cursor: pointer; transition: all var(--dur-fast) ease;
+}
+.undo-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Next interval labels below rate buttons ---- */
+.rate-row { display: flex; gap: 6px; }
+.rate-col { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
+.rate-col .rate-btn { width: 100%; margin: 0; }
+.rate-next {
+  font-size: 10px; color: var(--ink-3); font-weight: 600;
+  text-align: center; white-space: nowrap;
+}

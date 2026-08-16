@@ -5,16 +5,6 @@ import { checkFlashcardCompletion } from '@/lib/badges'
 import { sm2, type Rating, RATING_SCORE } from '@/lib/sm2'
 import { friendlyDbError } from '@/lib/dbErrors'
 
-/**
- * ROOT CAUSE of the old 500:
- * The client sends rating as a word ("again" | "hard" | "good" | "easy"), but
- * reviews.rating is a numeric column (again=0, hard=1, good=3, easy=5). Postgres
- * rejected the text with "invalid input syntax for type integer" -> 500 -> the
- * review was never saved -> topics stayed stuck on "Not started".
- *
- * We now write the numeric score. If the column turns out to be text in your
- * database, we fall back to the word automatically, so this works either way.
- */
 export async function POST(request: Request) {
   const cookieStore = await cookies()
   const studentId = cookieStore.get('student_id')?.value
@@ -26,7 +16,6 @@ export async function POST(request: Request) {
   const flashcard_id = body.flashcard_id
   const rawRating = body.rating
 
-  // Accept either a word or a number from the client
   const ratingWord: Rating =
     typeof rawRating === 'number'
       ? ((Object.keys(RATING_SCORE) as Rating[]).find(k => RATING_SCORE[k] === rawRating) ?? 'good')
@@ -34,7 +23,7 @@ export async function POST(request: Request) {
 
   const ratingScore = RATING_SCORE[ratingWord] ?? 3
 
-  // Try numeric first (matches the documented schema), fall back to text
+  // Save review event — try numeric first, fall back to text
   let reviewError = (
     await supabaseAdmin
       .from('reviews')
@@ -54,17 +43,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: friendlyDbError(reviewError, 'Could not save that rating.') }, { status: 500 })
   }
 
-  // Get current schedule state
+  // Get current schedule state — now includes card_state and learning_step
   const { data: existing, error: scheduleReadError } = await supabaseAdmin
     .from('flashcard_schedule')
-    .select('id, interval_days, ease_factor, review_count')
+    .select('id, interval_days, ease_factor, review_count, card_state, learning_step')
     .eq('student_id', studentId)
     .eq('flashcard_id', flashcard_id)
     .maybeSingle()
 
   if (scheduleReadError) {
     console.error('Schedule read failed:', scheduleReadError)
-    // Review is already saved - don't fail the request over scheduling
     return NextResponse.json({ success: true })
   }
 
@@ -78,6 +66,8 @@ export async function POST(request: Request) {
         ease_factor: next.ease_factor,
         review_count: next.review_count,
         due_date: next.due_date,
+        card_state: next.card_state,
+        learning_step: next.learning_step,
       })
       .eq('id', existing.id)
     if (updateError) console.error('Schedule update failed:', updateError)
@@ -91,11 +81,13 @@ export async function POST(request: Request) {
         ease_factor: next.ease_factor,
         review_count: next.review_count,
         due_date: next.due_date,
+        card_state: next.card_state,
+        learning_step: next.learning_step,
       })
     if (insertError) console.error('Schedule insert failed:', insertError)
   }
 
-  // Badge check - never blocks the response
+  // Badge check
   try {
     const { data: card } = await supabaseAdmin
       .from('flashcards')
@@ -107,5 +99,9 @@ export async function POST(request: Request) {
     console.error('Badge check failed:', e)
   }
 
-  return NextResponse.json({ success: true, next_due: next.due_date })
+  return NextResponse.json({
+    success: true,
+    next_due: next.due_date,
+    card_state: next.card_state,
+  })
 }
