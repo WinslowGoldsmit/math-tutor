@@ -50,7 +50,7 @@ export default async function StudentHome() {
     .from('flashcard_schedule').select('flashcard_id, due_date').eq('student_id', studentId)
   const scheduledMap = new Map((schedules ?? []).map(s => [s.flashcard_id, s.due_date]))
 
-  type TopicStatus = 'not-started' | 'in-progress' | 'complete'
+  type TopicStatus = 'not-started' | 'in-progress' | 'complete' | 'empty'
   const topicData = (topics ?? []).map(topic => {
     const cards = (allFlashcards ?? []).filter(f => f.topic_id === topic.id)
     const mcqs = (allMcqs ?? []).filter(m => m.topic_id === topic.id)
@@ -59,6 +59,13 @@ export default async function StudentHome() {
     const total = cards.length + mcqs.length
     const done = fcDone + mcqDone
     const pct = total ? Math.round((done / total) * 100) : 0
+
+    // Track each content type separately, so a topic with no problems written
+    // yet can still be marked complete once every flashcard is done.
+    const fcComplete = cards.length > 0 && fcDone >= cards.length
+    const mcqComplete = mcqs.length > 0 && mcqDone >= mcqs.length
+    const fcPct = cards.length ? Math.round((fcDone / cards.length) * 100) : 0
+    const mcqPct = mcqs.length ? Math.round((mcqDone / mcqs.length) * 100) : 0
 
     // Due count for this topic
     const cardIds = cards.map(c => c.id)
@@ -69,11 +76,27 @@ export default async function StudentHome() {
     const newCards = cardIds.filter(id => !scheduledMap.has(id)).length
     const due = overdue + Math.min(newCards, 10)
 
+    // A part only counts against completion if it actually has content.
+    const parts = [
+      cards.length > 0 ? fcComplete : null,
+      mcqs.length > 0 ? mcqComplete : null,
+    ].filter(p => p !== null) as boolean[]
+
     let status: TopicStatus = 'not-started'
-    if (pct >= 100) status = 'complete'
+    if (total === 0) status = 'empty'
+    else if (parts.length > 0 && parts.every(Boolean)) status = 'complete'
     else if (done > 0) status = 'in-progress'
 
-    return { ...topic, pct, due, status, fcDone, mcqDone, total, cards: cards.length, mcqCount: mcqs.length }
+    // What is actually left to do — shown to the student instead of a bare %
+    const remaining: string[] = []
+    if (cards.length > 0 && !fcComplete) remaining.push(`${cards.length - fcDone} card${cards.length - fcDone === 1 ? '' : 's'} left`)
+    if (mcqs.length > 0 && !mcqComplete) remaining.push(`${mcqs.length - mcqDone} problem${mcqs.length - mcqDone === 1 ? '' : 's'} left`)
+
+    return {
+      ...topic, pct, due, status, fcDone, mcqDone, total,
+      cards: cards.length, mcqCount: mcqs.length,
+      fcComplete, mcqComplete, fcPct, mcqPct, remaining,
+    }
   })
 
   const dueTopics = topicData.filter(t => t.due > 0)
@@ -91,11 +114,13 @@ export default async function StudentHome() {
     'not-started': '○',
     'in-progress': '◑',
     'complete': '●',
+    'empty': '◌',
   }
   const statusLabel: Record<TopicStatus, string> = {
     'not-started': 'Not started',
     'in-progress': 'In progress',
     'complete': 'Complete',
+    'empty': 'Coming soon',
   }
 
   return (
@@ -185,7 +210,23 @@ export default async function StudentHome() {
                   <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-in-progress anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
                     <div style={{ flex: 1 }}>
                       <div>{topic.name}</div>
-                      <div className="topic-status-meta">{topic.pct}% done · {topic.fcDone}/{topic.cards} cards · {topic.mcqDone}/{topic.mcqCount} problems</div>
+                      <div className="topic-status-meta">
+                        {topic.remaining.length ? topic.remaining.join(' · ') : `${topic.pct}% done`}
+                      </div>
+                      <div className="split-bars">
+                        {topic.cards > 0 && (
+                          <span className={`split-bar ${topic.fcComplete ? 'is-done' : ''}`} title={`Flashcards ${topic.fcPct}%`}>
+                            <span className="split-bar-fill" style={{ width: `${topic.fcPct}%` }} />
+                            <span className="split-bar-label">{topic.fcComplete ? '✓' : ''} Cards</span>
+                          </span>
+                        )}
+                        {topic.mcqCount > 0 && (
+                          <span className={`split-bar ${topic.mcqComplete ? 'is-done' : ''}`} title={`Problems ${topic.mcqPct}%`}>
+                            <span className="split-bar-fill" style={{ width: `${topic.mcqPct}%` }} />
+                            <span className="split-bar-label">{topic.mcqComplete ? '✓' : ''} Problems</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {topic.due > 0 && <span className="due-count">{topic.due} due</span>}
                   </Link>
@@ -210,6 +251,21 @@ export default async function StudentHome() {
               </>
             )}
 
+            {/* Nothing authored yet — keep these out of Not started */}
+            {topicData.filter(t => t.status === 'empty').length > 0 && (
+              <>
+                <p className="topic-group-label" style={{ color: 'var(--ink-3)' }}>◌ Coming soon</p>
+                {topicData.filter(t => t.status === 'empty').map((topic, i) => (
+                  <div key={topic.id} className="topic-status-card topic-status-empty anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
+                    <div style={{ flex: 1 }}>
+                      <div>{topic.name}</div>
+                      <div className="topic-status-meta">Your teacher is still adding content here</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
             {/* Complete */}
             {topicData.filter(t => t.status === 'complete').length > 0 && (
               <>
@@ -220,7 +276,12 @@ export default async function StudentHome() {
                   <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-complete anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
                     <div style={{ flex: 1 }}>
                       <div>{topic.name}</div>
-                      <div className="topic-status-meta">All done ✓</div>
+                      <div className="topic-status-meta">
+                        {topic.cards > 0 && `${topic.cards} cards`}
+                        {topic.cards > 0 && topic.mcqCount > 0 && ' · '}
+                        {topic.mcqCount > 0 && `${topic.mcqCount} problems`}
+                        {' — all done ✓'}
+                      </div>
                     </div>
                   </Link>
                 ))}

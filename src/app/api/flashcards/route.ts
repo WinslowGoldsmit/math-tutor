@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
+import { friendlyDbError } from '@/lib/dbErrors'
 
 const NEW_CARDS_PER_SESSION = 10
 const today = () => new Date().toISOString().slice(0, 10)
@@ -11,19 +12,25 @@ export async function GET(request: Request) {
   const cookieStore = await cookies()
   const studentId = cookieStore.get('student_id')?.value
 
-  const { data: allCards, error } = await supabaseAdmin
-    .from('flashcards')
-    .select('id, front, back, image_url')
-    .eq('topic_id', topicId)
+  const [{ data: allCards, error }, { data: topic }] = await Promise.all([
+    supabaseAdmin
+      .from('flashcards')
+      .select('id, front, back, image_url, answer_image_url')
+      .eq('topic_id', topicId),
+    supabaseAdmin.from('topics').select('name').eq('id', topicId).maybeSingle(),
+  ])
 
-  if (error) return NextResponse.json({ message: error.message }, { status: 500 })
-  if (!allCards?.length) return NextResponse.json({ flashcards: [] })
+  if (error) {
+    console.error('Flashcard load failed:', error)
+    return NextResponse.json({ message: friendlyDbError(error, 'Could not load cards.') }, { status: 500 })
+  }
 
-  if (!studentId) return NextResponse.json({ flashcards: allCards })
+  const topic_name = topic?.name ?? ''
+  if (!allCards?.length) return NextResponse.json({ flashcards: [], topic_name })
+  if (!studentId) return NextResponse.json({ flashcards: allCards, topic_name })
 
   const cardIds = allCards.map(c => c.id)
 
-  // Get existing schedules for this student
   const { data: schedules } = await supabaseAdmin
     .from('flashcard_schedule')
     .select('flashcard_id, due_date')
@@ -35,21 +42,18 @@ export async function GET(request: Request) {
 
   const todayStr = today()
 
-  // Due cards: have a schedule AND due_date <= today
   const dueCards = allCards.filter(c => {
     const due = scheduledMap.get(c.id)
     return due && due <= todayStr
   })
 
-  // New cards: never reviewed (no schedule entry)
   const newCards = allCards.filter(c => !scheduledMap.has(c.id))
-
-  // Combine: due first, then new cards up to limit
   const newToShow = newCards.slice(0, Math.max(0, NEW_CARDS_PER_SESSION - dueCards.length))
   const flashcards = [...dueCards, ...newToShow]
 
   return NextResponse.json({
     flashcards,
+    topic_name,
     due_count: dueCards.length,
     new_count: newToShow.length,
     total_due: dueCards.length + newCards.length,

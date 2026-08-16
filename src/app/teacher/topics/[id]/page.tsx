@@ -14,8 +14,8 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
     { data: mcqs },
   ] = await Promise.all([
     supabaseAdmin.from('topics').select('id, name, chapter_id').eq('id', id).single(),
-    supabaseAdmin.from('flashcards').select('id, front, back').eq('topic_id', id),
-    supabaseAdmin.from('mcqs').select('id, question, options, correct_index, explanation').eq('topic_id', id),
+    supabaseAdmin.from('flashcards').select('id, front, back, image_url, answer_image_url').eq('topic_id', id),
+    supabaseAdmin.from('mcqs').select('id, question, options, correct_index, explanation, hint, image_url, explanation_image_url').eq('topic_id', id),
   ])
 
   return (
@@ -32,7 +32,7 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
           {(!flashcards || flashcards.length === 0) && (
             <div className="empty">No flashcards yet. Use the form below to add some.</div>
           )}
-          {flashcards?.map(f => <FlashcardItem key={f.id} card={f} />)}
+          {flashcards?.map(f => <FlashcardItem key={f.id} card={f as any} />)}
           <BulkAddForm topicId={id} type="flashcards" />
         </section>
 
@@ -41,7 +41,7 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
           {(!mcqs || mcqs.length === 0) && (
             <div className="empty">No problems yet. Use the form below to add some.</div>
           )}
-          {mcqs?.map(q => <McqItem key={q.id} mcq={q} />)}
+          {mcqs?.map(q => <McqItem key={q.id} mcq={q as any} />)}
           <BulkAddForm topicId={id} type="mcqs" />
         </section>
       </div>

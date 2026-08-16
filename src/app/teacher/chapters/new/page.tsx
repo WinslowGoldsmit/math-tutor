@@ -3,17 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-const COLORS = [
-  { label: 'Blue', value: '#EBF1FE', border: '#3D7BF5' },
-  { label: 'Green', value: '#E8F5E9', border: '#34A853' },
-  { label: 'Amber', value: '#FFF3E0', border: '#F5A623' },
-  { label: 'Violet', value: '#F0EBFF', border: '#7C4DFF' },
-  { label: 'Coral', value: '#FDE8E6', border: '#EA4335' },
-  { label: 'Teal', value: '#E2EDEC', border: '#33636A' },
-]
-
-const EMOJIS = ['📐', '📏', '🔢', '📊', '🔵', '🟢', '🟡', '🔴', '⭐', '🎯', '🧩', '💡']
+import { TOPIC_COLORS as COLORS, CHAPTER_EMOJIS as EMOJIS } from '@/lib/topicStyle'
 
 export default function NewChapter() {
   const [name, setName] = useState('')

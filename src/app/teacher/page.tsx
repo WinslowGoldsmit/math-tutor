@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import Link from 'next/link'
 import Topbar from '@/app/Topbar'
+import ChapterList from './ChapterList'
 
 export default async function TeacherHome() {
   const cookieStore = await cookies()
@@ -15,7 +16,7 @@ export default async function TeacherHome() {
     { data: streaks },
     { data: profiles },
   ] = await Promise.all([
-    supabaseAdmin.from('chapters').select('id, name, emoji, color'),
+    supabaseAdmin.from('chapters').select('id, name, emoji, color, order_index').order('order_index'),
     supabaseAdmin.from('students').select('id, name, class'),
     supabaseAdmin.from('streaks').select('student_id, count, last_practice_date'),
     supabaseAdmin.from('student_profile').select('student_id, avatar'),
@@ -40,9 +41,10 @@ export default async function TeacherHome() {
           </p>
         </div>
 
-        <Link href="/teacher/analytics" className="text-link" style={{ display: 'inline-block', marginBottom: '16px' }}>
-          View class analytics →
-        </Link>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
+          <Link href="/teacher/analytics" className="text-link">View class analytics →</Link>
+          <Link href="/teacher/messages" className="text-link">All notes sent →</Link>
+        </div>
 
         {attentionList.length > 0 && (
           <>
@@ -70,22 +72,7 @@ export default async function TeacherHome() {
         )}
 
         <div className="section-label">Chapters</div>
-        {(!chapters || chapters.length === 0) && (
-          <div className="empty">No chapters yet. Add one below.</div>
-        )}
-        {chapters?.map(ch => {
-          const bg = ch.color || 'var(--bg-sunken)'
-          return (
-            <Link key={ch.id} href={`/teacher/chapters/${ch.id}`} style={{ textDecoration: 'none' }}>
-              <div className="chapter-box" style={{ background: bg }}>
-                <div className="chapter-box-header">
-                  {ch.emoji && <span className="chapter-emoji">{ch.emoji}</span>}
-                  <span className="chapter-title">{ch.name}</span>
-                </div>
-              </div>
-            </Link>
-          )
-        })}
+        <ChapterList chapters={(chapters ?? []) as any} />
         <Link href="/teacher/chapters/new" className="btn-ghost" style={{ display: 'inline-block', marginTop: '4px' }}>+ Add a chapter</Link>
 
         <div className="section-label">All students</div>

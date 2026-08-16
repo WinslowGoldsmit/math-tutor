@@ -14,7 +14,7 @@ export type SM2State = {
 
 export type Rating = 'again' | 'hard' | 'good' | 'easy'
 
-const RATING_SCORE: Record<Rating, number> = {
+export const RATING_SCORE: Record<Rating, number> = {
   again: 0,
   hard: 1,
   good: 3,
