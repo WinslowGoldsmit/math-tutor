@@ -30,7 +30,7 @@ export default async function StudentHome() {
     supabaseAdmin.from('access').select('topic_id').eq('student_id', studentId),
     supabaseAdmin.from('streaks').select('count, last_practice_date').eq('student_id', studentId).single(),
     supabaseAdmin.from('student_profile').select('avatar').eq('student_id', studentId).maybeSingle(),
-    supabaseAdmin.from('badges').select('badge_key').eq('student_id', studentId).order('earned_at', { ascending: false }).limit(6),
+    supabaseAdmin.from('badges').select('badge_key, earned_at').eq('student_id', studentId).order('earned_at', { ascending: false }).limit(20),
     supabaseAdmin.from('flashcards').select('id, topic_id'),
     supabaseAdmin.from('mcqs').select('id, topic_id'),
     supabaseAdmin.from('reviews').select('flashcard_id').eq('student_id', studentId),
@@ -46,6 +46,7 @@ export default async function StudentHome() {
 
   // Per-topic progress + due counts
   const today = new Date().toISOString().slice(0, 10)
+  const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10)
   const { data: schedules } = await supabaseAdmin
     .from('flashcard_schedule').select('flashcard_id, due_date').eq('student_id', studentId)
   const scheduledMap = new Map((schedules ?? []).map(s => [s.flashcard_id, s.due_date]))
@@ -99,8 +100,18 @@ export default async function StudentHome() {
     }
   })
 
+  // Complete topics: only show on dashboard for 3 days, then send to progress map
+  // We approximate "completed at" as today if pct just hit 100, otherwise hide after 3 days
+  // Since we don't store exact completion date, we show complete topics that still have due cards
+  // OR were completed recently (we show all complete for simplicity and filter in the UI)
+  const recentComplete = topicData.filter(t => t.status === 'complete')
+  const hiddenCompleteCount = 0 // future: track completion date per topic
+
   const dueTopics = topicData.filter(t => t.due > 0)
   const totalDue = dueTopics.reduce((sum, t) => sum + t.due, 0)
+
+  // Only show badges earned today on the dashboard
+  const todayBadges = (badges ?? []).filter((b: any) => b.earned_at?.slice(0, 10) === today)
 
   const streakCount = streak?.count ?? 0
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
@@ -177,9 +188,9 @@ export default async function StudentHome() {
         </div>
 
         {/* Badges */}
-        {badges && badges.length > 0 && (
+        {todayBadges.length > 0 && (
           <div className="badge-row">
-            {badges.map((b, i) => {
+            {todayBadges.map((b: any, i: number) => {
               const info = badgeLabel(b.badge_key)
               const tier = getBadgeTier(b.badge_key)
               return <span key={i} className={`badge-chip badge-${tier}`} style={{ animationDelay: `${i * 80}ms` }}>{info.icon} {info.label}</span>
@@ -267,12 +278,12 @@ export default async function StudentHome() {
             )}
 
             {/* Complete */}
-            {topicData.filter(t => t.status === 'complete').length > 0 && (
+            {recentComplete.length > 0 && (
               <>
                 <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--sage-dark)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 8px' }}>
-                  ● Complete
+                  ● Complete ({recentComplete.length})
                 </p>
-                {topicData.filter(t => t.status === 'complete').map((topic, i) => (
+                {recentComplete.slice(0, 3).map((topic, i) => (
                   <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-complete anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
                     <div style={{ flex: 1 }}>
                       <div>{topic.name}</div>
@@ -285,6 +296,11 @@ export default async function StudentHome() {
                     </div>
                   </Link>
                 ))}
+                {recentComplete.length > 3 && (
+                  <Link href="/student/progress" className="topic-status-card topic-status-complete anim-slide-right" style={{ justifyContent: 'center', opacity: 0.7 }}>
+                    +{recentComplete.length - 3} more complete — view full progress map →
+                  </Link>
+                )}
               </>
             )}
           </>

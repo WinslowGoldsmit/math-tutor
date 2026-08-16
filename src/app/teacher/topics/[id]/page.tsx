@@ -23,6 +23,9 @@ export default async function TopicDetail({ params }: { params: Promise<{ id: st
       <Topbar role="teacher" />
       <div className="page-wide" style={{ paddingTop: '16px' }}>
         <Link href={`/teacher/chapters/${topic?.chapter_id}`} className="back-link">← Chapter</Link>
+        <Link href={`/teacher/topics/${id}/cards`} className="text-link" style={{ float: 'right', marginTop: '-24px' }}>
+          Card browser →
+        </Link>
         <h1 className="page-title" style={{ marginBottom: '24px' }}>{topic?.name}</h1>
 
         <section style={{ marginBottom: '32px' }}>

@@ -81,6 +81,16 @@ export default async function TopicHub({ params }: { params: Promise<{ id: strin
           </div>
         </Link>
       </div>
+
+      {fcCount > 0 && (
+        <Link
+          href={`/student/topics/${id}/cards`}
+          className="text-link"
+          style={{ display: 'block', textAlign: 'center', marginTop: '16px', fontSize: '13px' }}
+        >
+          Browse all {fcCount} cards →
+        </Link>
+      )}
     </div>
   )
 }
