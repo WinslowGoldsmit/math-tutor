@@ -1,13 +1,15 @@
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+
+const SESSION_MAX_AGE = 60 * 60 * 8 // 8 hours
 
 export async function POST(request: Request) {
   const { name, code } = await request.json()
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('students')
-    .select('id, name')
+    .select('id, name, class')
     .eq('name', name)
     .eq('code', code)
     .single()
@@ -17,8 +19,9 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies()
-  cookieStore.set('student_id', String(data.id), { httpOnly: true, path: '/' })
-  cookieStore.set('student_name', data.name, { httpOnly: true, path: '/' })
+  cookieStore.set('student_id', String(data.id), { httpOnly: true, path: '/', maxAge: SESSION_MAX_AGE })
+  cookieStore.set('student_name', data.name, { httpOnly: true, path: '/', maxAge: SESSION_MAX_AGE })
+  cookieStore.set('student_class', data.class ?? '10', { httpOnly: true, path: '/', maxAge: SESSION_MAX_AGE })
 
   return NextResponse.json({ success: true })
 }

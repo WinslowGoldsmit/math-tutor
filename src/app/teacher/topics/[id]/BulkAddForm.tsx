@@ -34,11 +34,7 @@ export default function BulkAddForm({ topicId, type }: { topicId: string; type: 
     setUploading(true)
     const fileName = `${Date.now()}-${file.name}`
     const { error } = await supabase.storage.from('images').upload(fileName, file)
-    if (error) {
-      setMessage('Image upload failed: ' + error.message)
-      setUploading(false)
-      return
-    }
+    if (error) { setMessage('Upload failed: ' + error.message); setUploading(false); return }
     const { data } = supabase.storage.from('images').getPublicUrl(fileName)
     setLastUploadedUrl(data.publicUrl)
     setUploading(false)
@@ -49,37 +45,26 @@ export default function BulkAddForm({ topicId, type }: { topicId: string; type: 
     setMessage('Link copied — paste it after IMAGE: in your text.')
   }
 
-  const placeholder =
-    type === 'flashcards'
-      ? 'Q: State the Basic Proportionality Theorem.\nA: A line parallel to one side divides the other two sides in the same ratio.\nIMAGE: (optional)\n---'
-      : 'Q: In triangle ABC, DE parallel to BC. Which is correct?\nA) AD/DB = AE/EC\nB) AD/AE = DB/EC\nC) AB/AC = DE/BC only\nD) AD/DB = EC/AE\nCORRECT: A\nEXPLAIN: BPT divides the two sides in the same ratio.\nIMAGE: (optional)\n---'
+  const placeholder = type === 'flashcards'
+    ? 'Q: State the Basic Proportionality Theorem.\nA: A line parallel to one side divides the other two sides in the same ratio.\nIMAGE: (optional)\n---'
+    : 'Q: Which proportion is correct for BPT?\nA) AD/DB = AE/EC\nB) AD/AE = DB/EC\nC) AB/AC = DE/BC\nD) AD/DB = EC/AE\nCORRECT: A\nEXPLAIN: BPT divides proportionally.\nIMAGE: (optional)\n---'
 
   return (
-    <div style={{ marginTop: '10px' }}>
-      <div className="card" style={{ padding: '12px', marginBottom: '10px' }}>
-        <label style={{ fontSize: '12px', color: 'var(--ink-soft)', display: 'block', marginBottom: '8px' }}>
-          Upload an image (optional)
-        </label>
-        <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} style={{ marginBottom: uploading || lastUploadedUrl ? '10px' : 0 }} />
+    <div style={{ marginTop: '12px' }}>
+      <div className="card" style={{ padding: '14px', marginBottom: '10px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--ink-3)', marginBottom: '8px', fontWeight: 500 }}>Upload an image (optional)</p>
+        <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
         {uploading && <p className="msg-text">Uploading…</p>}
         {lastUploadedUrl && !uploading && (
-          <div>
-            <img src={lastUploadedUrl} alt="" style={{ maxWidth: '100px', borderRadius: '8px', display: 'block', marginBottom: '8px' }} />
+          <div style={{ marginTop: '8px' }}>
+            <img src={lastUploadedUrl} alt="" style={{ maxWidth: '80px', borderRadius: 'var(--r-sm)', marginBottom: '8px' }} />
             <button className="btn btn-small" onClick={copyUrl}>Copy link</button>
           </div>
         )}
       </div>
 
-      <textarea
-        className="mono"
-        value={text}
-        onChange={e => setText(e.target.value)}
-        placeholder={placeholder}
-        rows={6}
-      />
-      <button className="btn btn-primary" style={{ width: 'auto', padding: '10px 18px' }} onClick={handleAdd}>
-        Add from text
-      </button>
+      <textarea className="mono" value={text} onChange={e => setText(e.target.value)} placeholder={placeholder} rows={6} />
+      <button className="btn btn-primary btn-small" style={{ marginTop: '4px' }} onClick={handleAdd}>Add from text</button>
       {message && <p className="msg-text">{message}</p>}
     </div>
   )

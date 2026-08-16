@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
+import { checkMcqCompletion } from '@/lib/badges'
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -12,21 +13,26 @@ export async function POST(request: Request) {
 
   const { mcq_id, selected_index } = await request.json()
 
-  const { data: mcq } = await supabase
+  const { data: mcq } = await supabaseAdmin
     .from('mcqs')
-    .select('correct_index')
+    .select('correct_index, topic_id')
     .eq('id', mcq_id)
     .single()
 
   const is_correct =
     selected_index === null ? null : selected_index === mcq?.correct_index
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('attempts')
     .insert({ student_id: studentId, mcq_id, selected_index, is_correct })
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 })
   }
+
+  if (mcq?.topic_id) {
+    await checkMcqCompletion(studentId, mcq.topic_id)
+  }
+
   return NextResponse.json({ success: true })
 }

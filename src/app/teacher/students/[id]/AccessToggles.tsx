@@ -4,15 +4,7 @@ import { useState } from 'react'
 
 type Topic = { id: number; name: string }
 
-export default function AccessToggles({
-  studentId,
-  allTopics,
-  initiallyAllowed,
-}: {
-  studentId: string
-  allTopics: Topic[]
-  initiallyAllowed: number[]
-}) {
+export default function AccessToggles({ studentId, allTopics, initiallyAllowed }: { studentId: string; allTopics: Topic[]; initiallyAllowed: number[] }) {
   const [allowed, setAllowed] = useState<number[]>(initiallyAllowed)
 
   async function toggle(topicId: number) {
@@ -32,10 +24,8 @@ export default function AccessToggles({
         const on = allowed.includes(t.id)
         return (
           <div key={t.id} className="toggle-row" onClick={() => toggle(t.id)}>
-            <span style={{ fontSize: '13px' }}>{t.name}</span>
-            <span className={`toggle-status ${on ? 'toggle-on' : 'toggle-off'}`}>
-              {on ? 'Allowed' : 'Locked'}
-            </span>
+            <span style={{ fontSize: '13px', fontWeight: 500 }}>{t.name}</span>
+            <span className={`toggle-status ${on ? 'toggle-on' : 'toggle-off'}`}>{on ? 'Allowed' : 'Locked'}</span>
           </div>
         )
       })}

@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 function splitBlocks(text: string) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   })
 
   if (rows.length) {
-    const { error } = await supabase.from('flashcards').insert(rows)
+    const { error } = await supabaseAdmin.from('flashcards').insert(rows)
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 })
     }

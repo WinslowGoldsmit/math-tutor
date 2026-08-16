@@ -1,15 +1,28 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies()
   const isTeacher = cookieStore.get('is_teacher')?.value
-  if (!isTeacher) {
-    return NextResponse.json({ message: 'Not authorized' }, { status: 401 })
-  }
+  if (!isTeacher) return NextResponse.json({ message: 'Not authorized' }, { status: 401 })
   const { id } = await params
-  const { error } = await supabase.from('chapters').delete().eq('id', id)
+  const { error } = await supabaseAdmin.from('chapters').delete().eq('id', id)
+  if (error) return NextResponse.json({ message: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const cookieStore = await cookies()
+  const isTeacher = cookieStore.get('is_teacher')?.value
+  if (!isTeacher) return NextResponse.json({ message: 'Not authorized' }, { status: 401 })
+  const { id } = await params
+  const { name, emoji, color } = await request.json()
+  const update: any = {}
+  if (name !== undefined) update.name = name
+  if (emoji !== undefined) update.emoji = emoji
+  if (color !== undefined) update.color = color
+  const { error } = await supabaseAdmin.from('chapters').update(update).eq('id', id)
   if (error) return NextResponse.json({ message: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

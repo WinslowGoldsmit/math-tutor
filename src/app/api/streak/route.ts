@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
+import { checkStreakBadges } from '@/lib/badges'
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -16,7 +17,7 @@ export async function GET() {
     return NextResponse.json({ message: 'Not logged in' }, { status: 401 })
   }
 
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from('streaks')
     .select('count, last_practice_date')
     .eq('student_id', studentId)
@@ -35,27 +36,28 @@ export async function POST() {
   const today = todayStr()
   const yesterday = yesterdayStr()
 
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseAdmin
     .from('streaks')
     .select('id, count, last_practice_date')
     .eq('student_id', studentId)
     .single()
 
+  let newCount = 1
+
   if (!existing) {
-    await supabase.from('streaks').insert({ student_id: studentId, count: 1, last_practice_date: today })
-    return NextResponse.json({ count: 1 })
+    await supabaseAdmin.from('streaks').insert({ student_id: studentId, count: 1, last_practice_date: today })
+    newCount = 1
+  } else if (existing.last_practice_date === today) {
+    newCount = existing.count
+  } else {
+    newCount = existing.last_practice_date === yesterday ? existing.count + 1 : 1
+    await supabaseAdmin
+      .from('streaks')
+      .update({ count: newCount, last_practice_date: today })
+      .eq('id', existing.id)
   }
 
-  if (existing.last_practice_date === today) {
-    return NextResponse.json({ count: existing.count })
-  }
-
-  const newCount = existing.last_practice_date === yesterday ? existing.count + 1 : 1
-
-  await supabase
-    .from('streaks')
-    .update({ count: newCount, last_practice_date: today })
-    .eq('id', existing.id)
+  await checkStreakBadges(studentId, newCount)
 
   return NextResponse.json({ count: newCount })
 }

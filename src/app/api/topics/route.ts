@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -11,12 +11,12 @@ export async function POST(request: Request) {
 
   const { name, chapter_id } = await request.json()
 
-  const { count } = await supabase
+  const { count } = await supabaseAdmin
     .from('topics')
     .select('*', { count: 'exact', head: true })
     .eq('chapter_id', chapter_id)
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('topics')
     .insert({ name, chapter_id, order_index: count ?? 0 })
 

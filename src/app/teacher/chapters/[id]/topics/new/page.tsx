@@ -24,14 +24,9 @@ export default function NewTopic() {
 
   return (
     <div className="page" style={{ maxWidth: '400px' }}>
-      <Link href={`/teacher/chapters/${chapterId}`} className="back-link">&larr; Back</Link>
+      <Link href={`/teacher/chapters/${chapterId}`} className="back-link">← Back</Link>
       <h1 className="page-title" style={{ marginBottom: '20px' }}>New topic</h1>
-      <input
-        type="text"
-        placeholder="e.g. Basic Proportionality Theorem"
-        value={name}
-        onChange={e => setName(e.target.value)}
-      />
+      <input type="text" placeholder="e.g. Basic Proportionality Theorem" value={name} onChange={e => setName(e.target.value)} />
       <button className="btn btn-primary" onClick={handleSave}>Save topic</button>
       {error && <p className="error-text">{error}</p>}
     </div>
