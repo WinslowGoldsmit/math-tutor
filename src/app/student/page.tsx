@@ -134,34 +134,45 @@ export default async function StudentHome() {
     'empty': 'Coming soon',
   }
 
+  // Counts for the compact footer summary
+  const inProgressCount  = topicData.filter(t => t.status === 'in-progress').length
+  const notStartedTopics = topicData.filter(t => t.status === 'not-started')
+  const emptyTopics      = topicData.filter(t => t.status === 'empty')
+
   return (
     <>
       <Topbar role="student" name="" />
       <div className="page">
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-          {profile?.avatar ? (
-            <img className="avatar-img" src={`/avatars/${profile.avatar}.png`} alt="" style={{ width: '52px', height: '52px' }} />
-          ) : (
-            <div className="avatar-placeholder" style={{ width: '52px', height: '52px' }}>{studentName?.charAt(0)?.toUpperCase()}</div>
-          )}
-          <div style={{ flex: 1 }}>
-            <h1 className="page-title" style={{ marginBottom: '4px' }}>Hey, {studentName}</h1>
-            <span className="class-badge">Class {studentClass}</span>
+
+        {/* ── HEADER ── avatar + name + class, compact */}
+        <div className="student-header">
+          <div className="student-header-left">
+            {profile?.avatar ? (
+              <img className="avatar-img" src={`/avatars/${profile.avatar}.png`} alt="" style={{ width: '44px', height: '44px' }} />
+            ) : (
+              <div className="avatar-placeholder" style={{ width: '44px', height: '44px', fontSize: '16px' }}>{studentName?.charAt(0)?.toUpperCase()}</div>
+            )}
+            <div>
+              <div className="student-header-name">Hey, {studentName} 👋</div>
+              <span className="class-badge">Class {studentClass}</span>
+            </div>
+          </div>
+          {/* Streak inline with header */}
+          <div className={`streak-inline ${streakBroken ? 'broken' : ''}`}>
+            <span className="streak-inline-num">{streakCount}</span>
+            <span className="streak-inline-fire">{streakBroken ? '💔' : streakCount > 0 ? '🔥' : '○'}</span>
           </div>
         </div>
 
+        {/* Avatar picker — only when no avatar set yet */}
         {!profile?.avatar && <AvatarPicker />}
         {profile?.avatar && <ChangeAvatarButton />}
 
-        {/* Teacher messages */}
-        <Messages />
-
-        {/* Today's practice with direct topic links */}
-        {dueTopics.length > 0 && (
+        {/* ── TODAY'S PRACTICE — PRIMARY FOCUS ── */}
+        {dueTopics.length > 0 ? (
           <div className="today-card">
             <div className="today-title">
-              Today&apos;s practice — {totalDue} card{totalDue !== 1 ? 's' : ''} due
+              📚 Today&apos;s practice — {totalDue} card{totalDue !== 1 ? 's' : ''} due
             </div>
             <div className="today-links">
               {dueTopics.map(t => (
@@ -172,24 +183,22 @@ export default async function StudentHome() {
               ))}
             </div>
           </div>
+        ) : (
+          <div className="all-clear-card">
+            <span style={{ fontSize: '28px' }}>✦</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '15px' }}>All caught up</div>
+              <div style={{ fontSize: '12px', color: 'var(--ink-3)', marginTop: '2px' }}>No cards due right now — come back tomorrow.</div>
+            </div>
+          </div>
         )}
 
-        {/* Streak */}
-        <div className={`streak-card ${streakBroken ? 'streak-broken' : ''}`}>
-          <div className="streak-dots">
-            {dots.map((filled, i) => (
-              <div key={i} className={`streak-dot ${filled ? 'filled' : ''}`} style={{ animationDelay: `${i * 60}ms` }} />
-            ))}
-          </div>
-          <div>
-            <div className="streak-num">{streakCount}</div>
-            <div className="streak-label">{streakBroken ? 'streak broken — restart today' : streakCount === 0 ? 'start your streak' : 'day streak'}</div>
-          </div>
-        </div>
+        {/* ── UNREAD TEACHER NOTES — only if present ── */}
+        <Messages />
 
-        {/* Badges */}
+        {/* ── TODAY'S BADGES — only if earned today ── */}
         {todayBadges.length > 0 && (
-          <div className="badge-row">
+          <div className="badge-row" style={{ marginBottom: '16px' }}>
             {todayBadges.map((b: any, i: number) => {
               const info = badgeLabel(b.badge_key)
               const tier = getBadgeTier(b.badge_key)
@@ -198,41 +207,32 @@ export default async function StudentHome() {
           </div>
         )}
 
-        <Link href="/student/progress" className="text-link" style={{ display: 'inline-block', marginBottom: '20px' }}>
-          View full progress map →
-        </Link>
-
-        {/* Topics with clear status distinction */}
-        <div className="section-label">Topics</div>
-
+        {/* ── TOPICS ── */}
         {noTopicsExist && <div className="empty">Your teacher is still setting things up — check back soon.</div>}
         {topicsExistButLocked && <div className="empty">Your teacher hasn&apos;t unlocked any topics for you yet.</div>}
 
-        {/* Separator sections */}
         {!noTopicsExist && !topicsExistButLocked && (
           <>
-            {/* In progress — shown first */}
-            {topicData.filter(t => t.status === 'in-progress').length > 0 && (
+            {/* IN PROGRESS — main list, most prominent */}
+            {inProgressCount > 0 && (
               <>
-                <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--amber-dark)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-                  ◑ In progress
-                </p>
+                <p className="topic-group-label" style={{ color: 'var(--amber-dark)' }}>◑ In progress</p>
                 {topicData.filter(t => t.status === 'in-progress').map((topic, i) => (
                   <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-in-progress anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
                     <div style={{ flex: 1 }}>
-                      <div>{topic.name}</div>
+                      <div style={{ fontWeight: 500 }}>{topic.name}</div>
                       <div className="topic-status-meta">
                         {topic.remaining.length ? topic.remaining.join(' · ') : `${topic.pct}% done`}
                       </div>
                       <div className="split-bars">
                         {topic.cards > 0 && (
-                          <span className={`split-bar ${topic.fcComplete ? 'is-done' : ''}`} title={`Flashcards ${topic.fcPct}%`}>
+                          <span className={`split-bar ${topic.fcComplete ? 'is-done' : ''}`}>
                             <span className="split-bar-fill" style={{ width: `${topic.fcPct}%` }} />
                             <span className="split-bar-label">{topic.fcComplete ? '✓' : ''} Cards</span>
                           </span>
                         )}
                         {topic.mcqCount > 0 && (
-                          <span className={`split-bar ${topic.mcqComplete ? 'is-done' : ''}`} title={`Problems ${topic.mcqPct}%`}>
+                          <span className={`split-bar ${topic.mcqComplete ? 'is-done' : ''}`}>
                             <span className="split-bar-fill" style={{ width: `${topic.mcqPct}%` }} />
                             <span className="split-bar-label">{topic.mcqComplete ? '✓' : ''} Problems</span>
                           </span>
@@ -245,66 +245,40 @@ export default async function StudentHome() {
               </>
             )}
 
-            {/* Not started */}
-            {topicData.filter(t => t.status === 'not-started').length > 0 && (
+            {/* NOT STARTED — secondary, smaller */}
+            {notStartedTopics.length > 0 && (
               <>
-                <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 8px' }}>
-                  ○ Not started
-                </p>
-                {topicData.filter(t => t.status === 'not-started').map((topic, i) => (
+                <p className="topic-group-label" style={{ color: 'var(--ink-3)', marginTop: inProgressCount > 0 ? '20px' : '0' }}>○ Not started</p>
+                {notStartedTopics.map((topic, i) => (
                   <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-not-started anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
                     <div style={{ flex: 1 }}>
                       <div>{topic.name}</div>
-                      <div className="topic-status-meta">{topic.cards} flashcards · {topic.mcqCount} problems</div>
+                      <div className="topic-status-meta">{topic.cards} cards · {topic.mcqCount} problems</div>
                     </div>
                   </Link>
                 ))}
               </>
             )}
 
-            {/* Nothing authored yet — keep these out of Not started */}
-            {topicData.filter(t => t.status === 'empty').length > 0 && (
-              <>
-                <p className="topic-group-label" style={{ color: 'var(--ink-3)' }}>◌ Coming soon</p>
-                {topicData.filter(t => t.status === 'empty').map((topic, i) => (
-                  <div key={topic.id} className="topic-status-card topic-status-empty anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
-                    <div style={{ flex: 1 }}>
-                      <div>{topic.name}</div>
-                      <div className="topic-status-meta">Your teacher is still adding content here</div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {/* Complete */}
+            {/* COMPLETE — just a pill/link, never a full list */}
             {recentComplete.length > 0 && (
-              <>
-                <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--sage-dark)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 8px' }}>
-                  ● Complete ({recentComplete.length})
-                </p>
-                {recentComplete.slice(0, 3).map((topic, i) => (
-                  <Link key={topic.id} href={`/student/topics/${topic.id}`} className="topic-status-card topic-status-complete anim-slide-right" style={{ animationDelay: `${i * 40}ms` }}>
-                    <div style={{ flex: 1 }}>
-                      <div>{topic.name}</div>
-                      <div className="topic-status-meta">
-                        {topic.cards > 0 && `${topic.cards} cards`}
-                        {topic.cards > 0 && topic.mcqCount > 0 && ' · '}
-                        {topic.mcqCount > 0 && `${topic.mcqCount} problems`}
-                        {' — all done ✓'}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-                {recentComplete.length > 3 && (
-                  <Link href="/student/progress" className="topic-status-card topic-status-complete anim-slide-right" style={{ justifyContent: 'center', opacity: 0.7 }}>
-                    +{recentComplete.length - 3} more complete — view full progress map →
-                  </Link>
-                )}
-              </>
+              <Link href="/student/progress" className="complete-summary-link">
+                ● {recentComplete.length} topic{recentComplete.length === 1 ? '' : 's'} complete — view progress map →
+              </Link>
+            )}
+
+            {/* COMING SOON — most muted, last */}
+            {emptyTopics.length > 0 && (
+              <p className="coming-soon-label">◌ {emptyTopics.length} topic{emptyTopics.length === 1 ? '' : 's'} coming soon</p>
             )}
           </>
         )}
+
+        {/* ── FOOTER NAV ── */}
+        <div className="student-footer">
+          <Link href="/student/progress" className="footer-link">📊 Progress map</Link>
+        </div>
+
       </div>
     </>
   )

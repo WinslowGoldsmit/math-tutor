@@ -64,20 +64,24 @@ export default function LoginPage() {
           style={{ display: 'block', margin: '0 auto 10px' }}
           priority
         />
-        <p className="landing-tag">Focused practice, real progress.</p>
+        <p className="landing-tag">Focused practice, Real progress.</p>
       </div>
 
       {!role && (
         <div className="anim-fade-up">
           <button className="role-card" onClick={() => setRole('student')}>
-            <div className="role-icon" style={{ background: 'var(--accent-tint)', color: 'var(--accent)' }}>Z</div>
+            <div className="role-icon" style={{ background: 'var(--accent-tint)', padding: 0, overflow: 'hidden' }}>
+              <Image src="/role-student.png" alt="Student" width={52} height={52} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--r-md)' }} />
+            </div>
             <div>
               <strong style={{ display: 'block', fontSize: '15px' }}>I&apos;m a student</strong>
               <span style={{ display: 'block', fontSize: '12px', color: 'var(--ink-3)', marginTop: '2px' }}>Practice flashcards &amp; solve problems</span>
             </div>
           </button>
           <button className="role-card" onClick={() => setRole('teacher')}>
-            <div className="role-icon" style={{ background: 'var(--violet-tint)', color: 'var(--violet)' }}>T</div>
+            <div className="role-icon" style={{ background: 'var(--violet-tint)', padding: 0, overflow: 'hidden' }}>
+              <Image src="/role-teacher.png" alt="Teacher" width={52} height={52} style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--r-md)' }} />
+            </div>
             <div>
               <strong style={{ display: 'block', fontSize: '15px' }}>I&apos;m the teacher</strong>
               <span style={{ display: 'block', fontSize: '12px', color: 'var(--ink-3)', marginTop: '2px' }}>Create content &amp; track progress</span>
